@@ -53,7 +53,7 @@ int *pool_alloc(int size){
 }
 
 void pool_free(int *pointr){
-    if(pointr == NULL)return;
+    if (pointr == NULL)return;
     pool_each poeh;
     
     pointr = pointr - (int)((sizeof(pool_each) + (sizeof(int) - 1)) / sizeof(int)); // align header
@@ -68,6 +68,42 @@ void pool_free(int *pointr){
     memcpy(pointr, &poeh, sizeof(pool_each));
     return;
     
+}
+
+int *pool_realloc(int *pointr, int size){
+
+    int *new_pointr;
+    
+    if(pointr == NULL)return NULL;
+    pool_each poeh;
+    size = (size + (sizeof(int) - 1)) / sizeof(int); //round int type alignment
+    
+    pointr = pointr - (int)((sizeof(pool_each) + (sizeof(int) - 1)) / sizeof(int)); // align header
+    
+    memcpy(&poeh,pointr,sizeof(pool_each));
+#if defined(USE_MAGIC)
+    if (poeh.magic_num != magic_value){
+        printf("pointer error\r\n");
+        return NULL;
+    }
+#endif
+    if (poeh.my_size >= size){
+        
+        poeh.my_size = size;
+        memcpy(pointr, &poeh, sizeof(pool_each));
+        pointr = pointr + (int)((sizeof(pool_each) + (sizeof(int) - 1)) / sizeof(int)); // align pointer
+        return pointr;
+        
+    }
+    poeh.available = memory_invalid;
+    memcpy(pointr, &poeh, sizeof(pool_each));
+
+    new_pointr = (int *)pool_alloc(sizeof(int) * size);
+    pointr = pointr + (int)((sizeof(pool_each) + (sizeof(int) - 1)) / sizeof(int)); // align pointer
+
+    memcpy(new_pointr, pointr, sizeof(int) * poeh.my_size);
+    
+    return new_pointr;
 }
 
 
@@ -95,13 +131,15 @@ int main(void){
         printf("pl_buf[%d]=0x%x\r\n",i,pl_buf[i]);
     }
     
-    pool_free(p);
+    p = (int *)pool_realloc(p, sizeof(int) * 4);
+    p[2] = 0xCCCC;
+    p[3] = 0xDDDD;
     
-    //after free
     for(i = 0 ; i < 25 ; i++ ){
         printf("pl_buf[%d]=0x%x\r\n",i,pl_buf[i]);
     }
     
+    pool_free(p);
     
 
 }
