@@ -15,8 +15,12 @@
 #define pool_size           128
 #define magic_value         0xDEADDEAD
 //#define USE_MAGIC
+typedef struct {
+    int **pl_pointer;
+}pool_pointer;
 
 typedef struct {
+    int **this_pointer;
     int *first_pointer;
     int *next_pointer;
     int pool_size_all;
